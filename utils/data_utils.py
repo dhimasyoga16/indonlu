@@ -442,13 +442,13 @@ class EmotionDetectionDataLoader(DataLoader):
 #####
 class EntailmentDataset(Dataset):
     # Static constant variable
-    LABEL2INDEX = {'NotEntail': 0, 'Entail_or_Paraphrase': 1}
-    INDEX2LABEL = {0: 'NotEntail', 1: 'Entail_or_Paraphrase'}
+    LABEL2INDEX = {0: 0, 1: 1}
+    INDEX2LABEL = {0: 'not_duplicate', 1: 'duplicate'}
     NUM_LABELS = 2
     
     def load_dataset(self, path):
         df = pd.read_csv(path)
-        df['label'] = df['label'].apply(lambda label: self.LABEL2INDEX[label])
+        df['is_duplicate'] = df['is_duplicate'].apply(lambda label: self.LABEL2INDEX[label])
         return df
     
     def __init__(self, dataset_path, tokenizer, no_special_token=False, *args, **kwargs):
@@ -458,12 +458,12 @@ class EntailmentDataset(Dataset):
         
     def __getitem__(self, index):
         data = self.data.loc[index,:]
-        sent_A, sent_B, label = data['sent_A'], data['sent_B'], data['label']
+        question1, question2, is_duplicate = data['question1'], data['question2'], data['is_duplicate']
         
-        encoded_inputs = self.tokenizer.encode_plus(sent_A, sent_B, add_special_tokens=not self.no_special_token, return_token_type_ids=True)
+        encoded_inputs = self.tokenizer.encode_plus(question1, question2, add_special_tokens=not self.no_special_token, return_token_type_ids=True)
         subwords, token_type_ids = encoded_inputs["input_ids"], encoded_inputs["token_type_ids"]
         
-        return np.array(subwords), np.array(token_type_ids), np.array(label), data['sent_A'] + "|" + data['sent_B']
+        return np.array(subwords), np.array(token_type_ids), np.array(is_duplicate), data['question1'] + "|" + data['question2']
     
     def __len__(self):
         return len(self.data)
